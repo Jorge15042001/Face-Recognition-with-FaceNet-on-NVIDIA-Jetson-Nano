@@ -7,7 +7,8 @@ import subprocess
 import os
 import argparse
 
-name= "your_name"
+
+name= "Jorge"
 global video_thread
 global audio_thread
 
@@ -18,7 +19,7 @@ class VideoRecorder():
         self.fps = 6      
         self.fourcc = "MJPG" 
         self.frameSize = (640,480) 
-        self.video_filename = "path_to_save/" + name + ".avi"
+        self.video_filename = "data/" + name + ".avi"
         self.video_cap = cv2.VideoCapture(0)
         self.video_writer = cv2.VideoWriter_fourcc(*'XVID')
         self.video_out = cv2.VideoWriter(self.video_filename, self.video_writer, self.fps, self.frameSize)
@@ -55,16 +56,16 @@ class VideoRecorder():
 class AudioRecorder():
     def __init__(self):
         self.open = True
-        self.rate = 32000
-        self.frames_per_buffer = 32000
+        self.rate = 44100
+        self.frames_per_buffer = 44100
         self.channels = 2
         self.format = pyaudio.paInt16
-        self.audio_filename = "path_to_save/" + name + ".wav"
+        self.audio_filename = "data/" + name + ".wav"
         self.audio = pyaudio.PyAudio()
         self.stream = self.audio.open(format=self.format,
                                       channels=self.channels,
                                       rate=self.rate,
-                                      input_device_index=11,
+                                      #  input_device_index=0,
                                       frames_per_buffer = self.frames_per_buffer,
                                       input=True)
         self.audio_frames = []
@@ -72,25 +73,37 @@ class AudioRecorder():
 
     def record(self):
         self.stream.start_stream()
+        print("recording", end="")
         while(self.open == True):
+            print("... ",end="")
             data = self.stream.read(self.frames_per_buffer)
             self.audio_frames.append(data)
             if self.open==False:
                 break
 
+        print("Done")
 
     def stop(self):
         if self.open==True:
             self.open = False
+            time.sleep(4)
+            print("stoping stream")
             self.stream.stop_stream()
+            print("Closing stream")
             self.stream.close()
-            self.audio.terminate()
+            print("Terminating pyaudio")
             waveFile = wave.open(self.audio_filename, 'wb')
             waveFile.setnchannels(self.channels)
             waveFile.setsampwidth(self.audio.get_sample_size(self.format))
             waveFile.setframerate(self.rate)
+
+            print("writting frames")
             waveFile.writeframes(b''.join(self.audio_frames))
+            print("Fames done")
             waveFile.close()
+
+            self.audio.terminate()
+            print("mic terminated")
         pass
 
     def start(self):
