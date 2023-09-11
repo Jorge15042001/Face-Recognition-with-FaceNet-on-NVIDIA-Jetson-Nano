@@ -10,6 +10,13 @@ opencv-python = "*"
 tensorflow = "*"
 unidecode = "*"
 pyaudio = "*"
+imutils = "*"
+librosa = "*"
+pandas = "*"
+keras = "*"
+matplotlib = "*"
+resampy = "*"
+speechbrain = "*"
 
 [dev-packages]
 
