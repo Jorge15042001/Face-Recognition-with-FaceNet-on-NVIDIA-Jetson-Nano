@@ -1,6 +1,6 @@
 # TODO
 
-[ ] Capture dataset audio and stereo video
+[x] Capture dataset audio and stereo video
 
 [ ] Capture face embedding from video stream
 

@@ -3,3 +3,5 @@ data/
 Audios_dataset/
 Dataset/
 Models/
+videos/
+__pycache__/

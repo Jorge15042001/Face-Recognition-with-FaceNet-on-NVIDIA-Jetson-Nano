@@ -8,9 +8,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
-def get_now_str():
-    return datetime.utcnow().strftime('%Y-%m-%d__%H:%M:%S.%f')
-
 
 @dataclass
 class CameraConfig:
@@ -29,21 +26,17 @@ class StereoConfig:
     depth_to_pixel_size: float
     show_images: bool
 
-    save_input_images: bool
-    save_rectified_images: bool
-    save_predictions: bool
+    save_images: bool
 
-    save_input_images_path: str
-    save_rectified_images_path: str
-    save_predictions_file: bool
+    save_path: str
 
 
 def startCameraArray(left_camera: CameraConfig,
                      right_camera: CameraConfig,
                      streo_config: StereoConfig) -> CamArray:
-    if streo_config.save_input_images:
+    if streo_config.save_images:
         return CamArray((left_camera.idx, right_camera.idx),
-                        save_frames_to=streo_config.save_input_images_path)
+                        save_frames_to=streo_config.save_path)
 
     return CamArray((left_camera.idx, right_camera.idx))
 
@@ -57,13 +50,9 @@ def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
     depth_to_pixel_size = stero_config["depth_to_pixel_size"]
     show_images = stero_config["show_images"]
 
-    save_input_imgs = stero_config["save_input_images"]
-    save_rectified_imgs = stero_config["save_rectified_imgs"]
-    save_predictions = stero_config["save_predictions"]
+    save_imgs = stero_config["save_images"]
 
-    save_input_imgs_path = stero_config["save_input_images_path"]
-    save_rectified_imgs_path = stero_config["save_rectified_images_path"]
-    save_predictions_file = stero_config["save_predictions_file"]
+    save_imgs_path = stero_config["save_path"]
 
     left_camera = CameraConfig(
         stero_config["left_camera"]["idx"],
@@ -79,6 +68,4 @@ def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
 
     return StereoConfig(left_camera, right_camera, sep,
                         stereo_map_file, depth_to_pixel_size,
-                        show_images, save_input_imgs, save_rectified_imgs,
-                        save_predictions, save_input_imgs_path,
-                        save_rectified_imgs_path, save_predictions_file)
+                        show_images, save_imgs,  save_imgs_path)

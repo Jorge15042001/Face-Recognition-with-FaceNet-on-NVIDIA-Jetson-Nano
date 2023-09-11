@@ -1,6 +1,6 @@
 {
     "left_camera": {
-        "idx": 4,
+        "idx": 1,
         "fpx": 873.3146362304688,
         "center": [
             329.040620452588,
@@ -8,7 +8,7 @@
         ]
     },
     "right_camera": {
-        "idx": 1,
+        "idx": 3,
         "fpx": 993.7913208007812,
         "center": [
             364.7153863123476,
@@ -16,7 +16,10 @@
         ]
     },
     "separation": 16,
-    "stereo_map_file": "./stereoMap.xml",
+    "stereo_map_file": "./stereo_config/stereoMap.xml",
     "depth_to_pixel_size": 0.001315666666666666,
-    "show_images": true
+    "show_images": true,
+    "save_images": true,
+    "save_path": "./videos/" 
+
 }

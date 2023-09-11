@@ -3,7 +3,12 @@
 import cv2
 from time import sleep
 
+from datetime import datetime
 import threading
+
+
+def get_now_str():
+    return datetime.utcnow().strftime('%Y-%m-%d__%H:%M:%S.%f')
 
 
 class cameraThread:
@@ -36,15 +41,21 @@ class cameraThread:
 
 
 class CamArray:
-    def __init__(self, camidxs, fps=60, save_frames_to=None):
+    def __init__(self, camidxs, fps=60, save_frames_to=None, rectifier=lambda x, y: (x, y)):
+        assert (len(camidxs) == 2)
+
         self.cams = list(map(lambda x: cameraThread(x, fps), camidxs))
         self.fps = fps
         self.save_frames_to = save_frames_to
         self.video_writers = None
         if save_frames_to is not None:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            now_str = get_now_str()
             self.video_writers = list(map(lambda cam_id: cv2.VideoWriter(
-                f"{save_frames_to}/{cam_id}.avi", fourcc, 30.0, (640, 480))))
+                f"{save_frames_to}/{now_str}_{cam_id}.avi", fourcc, 30.0, (640, 480)), camidxs))
+            self.video_writers_rectified = list(map(lambda cam_id: cv2.VideoWriter(
+                f"{save_frames_to}/{now_str}_{cam_id}_rectified.avi", fourcc, 30.0, (640, 480)), camidxs))
+        self.rectifier = rectifier
 
     def start(self):
         for cam in self.cams:
@@ -56,14 +67,24 @@ class CamArray:
         for cam in self.cams:
             cam.close()
 
+        for writer in self.video_writers + self.video_writers_rectified:
+            writer.release()
+
     def get_frames(self):
         while any(map(lambda cam: not cam.get_frame()[0], self.cams)): continue
         frames = list(map(lambda cam: cam.get_frame(), self.cams))
         # record the frames into a video
         if self.video_writers is not None:
-            for frame, writer in zip(frames, self.video_writers):
+            for (_, frame), writer in zip(frames, self.video_writers):
                 writer.write(frame)
-        return frames
+
+        frame1, frame2 = self.rectifier(frames[0][1], frames[1][1])
+        frames = ((True, frame1), (True, frame2))
+
+        if self.video_writers_rectified is not None:
+            for (_, frame), writer in zip(frames, self.video_writers_rectified):
+                writer.write(frame)
+        return ((True, frame1), (True, frame2))
 
     def isOpened(self):
         return all(map(lambda cam: cam.cap.isOpened(), self.cams))

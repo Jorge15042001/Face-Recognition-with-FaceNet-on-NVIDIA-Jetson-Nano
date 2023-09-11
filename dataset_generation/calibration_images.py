@@ -55,6 +55,7 @@ def capture_images(cams: CamArray, images_dir):
 
 if __name__ == "__main__":
 
+    # TODO: handle command line parameters correctly
     stereo_config_file = sys.argv[1]
     images_dir = sys.argv[2]
 
