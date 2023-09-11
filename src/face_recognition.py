@@ -83,8 +83,13 @@ class FaceRecognition:
         emb_array[0, :] = self.session.run(self.embeddings, feed_dict=feed_dict)
         return np.squeeze(emb_array)
 
+    def load_face_embeddings_from_matrices(self, embeding_dir: str):
+        for file in os.listdir(embeding_dir):
+            emb = np.loadtxt(f"{embeding_dir}/{file}")
+            self.dict_embeddings[file.split(".")[0]] = emb
+
     # Dataset image processing. Image transformation to 128-feature vector and saving in an embedding dictionary.
-    def load_face_embeddings(self, image_dir, face_detector):
+    def load_face_embeddings_from_images(self, image_dir, face_detector):
         # Loop through all images in the database
         for file in os.listdir(image_dir):
             image = cv2.imread(image_dir + file)
@@ -115,6 +120,7 @@ class FaceRecognition:
 # Face recognition
 def face_recognition(image, face_detector, face_recognizer, show=False):
     faces = face_detector.detect_faces(image)
+    print(faces)
     detections = []
     # Loop over detections
     for face in faces:
@@ -129,6 +135,7 @@ def face_recognition(image, face_detector, face_recognizer, show=False):
         for _user in face_recognizer.dict_embeddings:
             # Comparison of the embedding of the unknown image with the one in the dataset
             flag, thresh = face_recognizer.is_same(face_recognizer.dict_embeddings[_user], user_embed)
+            print(face_recognizer.dict_embeddings[_user])
             # Faces with a distance less than the verification_threshold are saved.
             if flag:
                 detected[_user] = thresh
@@ -154,7 +161,7 @@ def main_program(image_or_video_path=None, show=False, dataset="../Dataset/"):
     fd = FaceDetection()
     fr = FaceRecognition()
     # Dataset embeddings
-    fr.load_face_embeddings(dataset, fd)
+    fr.load_face_embeddings_from_images(dataset, fd)
     waitkey_variable = 1
     image_flip = False
     # If input is an image or video
@@ -167,7 +174,7 @@ def main_program(image_or_video_path=None, show=False, dataset="../Dataset/"):
     else:
         print("Capturing from webcam")
         image_flip = True
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
 
     while 1:
         ret, image = cap.read()

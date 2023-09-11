@@ -8,44 +8,46 @@ import os
 import argparse
 
 
-name= "Jorge"
+name = "Jorge"
 global video_thread
 global audio_thread
 
-class VideoRecorder():  
+
+class VideoRecorder():
     def __init__(self):
         self.open = True
         self.device_index = 0
-        self.fps = 6      
-        self.fourcc = "MJPG" 
-        self.frameSize = (640,480) 
+        self.fps = 6
+        self.fourcc = "MJPG"
+        self.frameSize = (640, 480)
         self.video_filename = "data/" + name + ".avi"
-        self.video_cap = cv2.VideoCapture(0)
+        self.video_cap = cv2.VideoCapture(1)
+        print(self.video_cap.isOpened())
         self.video_writer = cv2.VideoWriter_fourcc(*'XVID')
-        self.video_out = cv2.VideoWriter(self.video_filename, self.video_writer, self.fps, self.frameSize)
+        self.video_out = cv2.VideoWriter(
+            self.video_filename, self.video_writer, self.fps, self.frameSize)
         self.frame_counts = 1
         self.start_time = time.time()
-
 
     def record(self):
         timer_start = time.time()
         timer_current = 0
-        while(self.open==True):
+        while (self.open == True):
             ret, video_frame = self.video_cap.read()
-            if (ret==True):
-                    self.video_out.write(video_frame)
-                    self.frame_counts += 1
-                    time.sleep(0.16)
+            if (ret == True):
+                self.video_out.write(video_frame)
+                self.frame_counts += 1
+                time.sleep(0.16)
             else:
                 break
 
     def stop(self):
-        if self.open==True:
-            self.open=False
+        if self.open == True:
+            self.open = False
             self.video_out.release()
             self.video_cap.release()
             cv2.destroyAllWindows()
-        else: 
+        else:
             pass
 
     def start(self):
@@ -66,25 +68,24 @@ class AudioRecorder():
                                       channels=self.channels,
                                       rate=self.rate,
                                       #  input_device_index=0,
-                                      frames_per_buffer = self.frames_per_buffer,
+                                      frames_per_buffer=self.frames_per_buffer,
                                       input=True)
         self.audio_frames = []
-
 
     def record(self):
         self.stream.start_stream()
         print("recording", end="")
-        while(self.open == True):
-            print("... ",end="")
+        while (self.open == True):
+            print("... ", end="")
             data = self.stream.read(self.frames_per_buffer)
             self.audio_frames.append(data)
-            if self.open==False:
+            if self.open == False:
                 break
 
         print("Done")
 
     def stop(self):
-        if self.open==True:
+        if self.open == True:
             self.open = False
             time.sleep(4)
             print("stoping stream")
@@ -111,14 +112,13 @@ class AudioRecorder():
         audio_thread.start()
 
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--record_audio', action="store_true")
     parser.add_argument("--record_video", action="store_true")
     parser.add_argument('--record_video_and_audio', action="store_true")
-    parser.add_argument('--time', type=int, default=0, help='Time in seconds to record')
+    parser.add_argument('--time', type=int, default=0,
+                        help='Time in seconds to record')
     args = parser.parse_args()
     if args.record_audio:
         audio_thread = AudioRecorder()

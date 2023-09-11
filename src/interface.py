@@ -60,10 +60,10 @@ layout = [
 fd = face_recognition.FaceDetection()
 fr = face_recognition.FaceRecognition()
 # Dataset embeddings
-fr.load_face_embeddings(dataset, fd)
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # set new dimensionns to cam object (not cap)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+fr.load_face_embeddings_from_images(dataset, fd)
+cap = cv2.VideoCapture(1)
+#  cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)  # set new dimensionns to cam object (not cap)
+#  cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 window = sg.Window("Face Recognition",layout, element_justification='c').Finalize()
 window.Maximize()
@@ -78,11 +78,13 @@ t.start()
 t.do_run = False
 
 while True:
+    print("\t\tStarting main loop")
     event, values = window.read(timeout=0)
     if event == "Exit" or event == sg.WIN_CLOSED:
         break
 
     ret, frame = cap.read()
+    print(ret, frame)
     height, width, _ = frame.shape
     imgbytes = cv2.imencode('.png', cv2.resize(frame,(700, 394)))[1].tobytes()
 
@@ -123,7 +125,7 @@ while True:
                 verification_array.append(reconocimiento[0])
             else:
                 if all(j == verification_array[0] for j in verification_array):
-                    image = Image.open(dataset + reconocimiento[0] + ".JPG")
+                    image = Image.open(dataset + reconocimiento[0] + ".jpg")
                     image.thumbnail((400, 400))
                     bio = io.BytesIO()
                     image.save(bio, format="PNG")
@@ -192,7 +194,7 @@ while True:
                     x, y, w, h = faces[0]
                     if (y - int(h / 2) > 0) and (x - w > 0) and (y + h + int(h / 2) < height) and (x + w * 2 < width):
                         save_frame = save_frame[y - int(h / 2):y + h + int(h / 2), x - w:x + w * 2]
-                    cv2.imwrite(dataset + persona + ".JPG", save_frame)
+                    cv2.imwrite(dataset + persona + ".jpg", save_frame)
                     fr.new_embedding(frame, faces, persona)
                     sg.popup_timed('Image saved!', title='Save photo to database',image=sg.EMOJI_BASE64_HAPPY_THUMBS_UP, no_titlebar=True)
 
