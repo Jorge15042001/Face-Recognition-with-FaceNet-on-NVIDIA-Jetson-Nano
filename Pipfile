@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 pysimplegui = "*"
 pillow = "*"
-opencv-python = "*"
 tensorflow = "*"
 unidecode = "*"
 pyaudio = "*"
@@ -17,6 +16,7 @@ keras = "*"
 matplotlib = "*"
 resampy = "*"
 speechbrain = "*"
+opencv-contrib-python = "*"
 
 [dev-packages]
 
