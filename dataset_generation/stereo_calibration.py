@@ -8,6 +8,7 @@ from dataclasses import dataclass
 #  from traits.api import Tuple
 from typing import Tuple
 from .calibration import getStereoRectifier
+from .utils import loadStereoCameraConfig
 
 
 def has_resolution(img, res):
@@ -15,14 +16,21 @@ def has_resolution(img, res):
     return res[0] == img_w and res[1] == img_h
 
 
-def findChessboard(img, chessboardSize, termination_criteria):
+def findChessboard(img, chessboardSize, termination_criteria, show=False):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(
-        gray, chessboardSize, cv2.CALIB_CB_EXHAUSTIVE)
+        gray, chessboardSize, cv2.CALIB_CB_ADAPTIVE_THRESH)
     if not ret:
         return (False, None)
+    if show:
+        new_img = img.copy()
+        cv2.drawChessboardCorners(new_img, chessboardSize, corners, ret)
+        cv2.imshow("chessboard", new_img)
+        cv2.waitKey(1000)
+
+
     corners = cv2.cornerSubPix(
-        gray, corners, (11, 11), (-1, -1), termination_criteria)
+        gray, corners, (4,4), (-1, -1), termination_criteria)
     return (True, corners)
 
 
@@ -52,9 +60,10 @@ def extractChessboardCoordinates(chessboardSize, frameRes, imgsL, imgsR):
             imgR, frameRes), f"Right image doesn't match resolution {frameRes}"
 
         retL, cornersL = findChessboard(imgL, chessboardSize,
-                                        termination_criteria)
+                                        termination_criteria, True)
         retR, cornersR = findChessboard(imgR, chessboardSize,
-                                        termination_criteria)
+                                        termination_criteria, True)
+        print(retL,retR)
         if not retL or not retR:
             # if not able to find corners for any of the images
             # then skip the pair of images
@@ -74,8 +83,6 @@ def cameraCalibration(objpoints, imgpoints, frameRes):
     newCameraMatrix, _ = cv2.getOptimalNewCameraMatrix(cameraMatrix, dist,
                                                        frameRes, 1, frameRes)
     return CalibrationResult(frameRes, imgpoints, cameraMatrix, newCameraMatrix, dist)
-
-################ FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #############################
 
 
 @dataclass
@@ -104,14 +111,14 @@ def saveCameraParameters(filename: str, calib_left: CalibrationResult,
     config = json.load(json_file)
     json_file.close()
 
-    config["left_camera"]["fpx"] =  calib_left. newCameraMatrix[0, 0]
+    config["left_camera"]["fpx"] = calib_left. newCameraMatrix[0, 0]
     config["right_camera"]["fpx"] = calib_right.newCameraMatrix[0, 0]
 
     config["left_camera"]["center"] = (calib_left.newCameraMatrix[0, 2],
                                        calib_left.newCameraMatrix[1, 2],)
     config["right_camera"]["center"] = (calib_right.newCameraMatrix[0, 2],
                                         calib_right.newCameraMatrix[1, 2],)
-    new_config:str = json.dumps(config, indent=4)
+    new_config: str = json.dumps(config, indent=4)
     json_file = open(filename, "w")
     json_file.write(new_config)
     json_file.close()
@@ -134,6 +141,7 @@ def stereoCalibration(objpoints: np.array,
 
     flags = 0
     flags |= cv2.CALIB_FIX_INTRINSIC
+    #  flags |= cv2.CALIB_SAME_FOCAL_LENGTH
     # Here we fix the intrinsic camara matrixes so that only Rot, Trns,
     # Emat and Fmat are calculated.
     # Hence intrinsic parameters are the same
@@ -178,26 +186,35 @@ if __name__ == "__main__":
     streo_map_file = sys.argv[2]
     streo_config_file = sys.argv[3]
 
+    stero_config = loadStereoCameraConfig(streo_config_file)
+
     imagesPathLeft = sorted(glob.glob(f'{images_path}/imageL*.png'))
     imagesPathRight = sorted(glob.glob(f'{images_path}/imageR*.png'))
+
+    print(list(zip(imagesPathLeft, imagesPathRight)))
 
     imagesLeft = list(map(cv2.imread, imagesPathLeft))
     imagesRight = list(map(cv2.imread, imagesPathRight))
 
-    calib_result = cameraCalibrationFromImages((8, 6), (640, 480),
+    calib_result = cameraCalibrationFromImages((8, 6), stero_config.resolution,
                                                imagesLeft, imagesRight)
     stereoCalibration(*calib_result, streo_map_file)
+    print(calib_result[1].cameraMatrix)
+    print(calib_result[1].newCameraMatrix)
+    print(calib_result[2].cameraMatrix)
+    print(calib_result[2].newCameraMatrix)
 
     # find camera matrix of rectified images
     rectifier = getStereoRectifier(streo_map_file)
 
     rectifiedL, rectifiedR = rectifyImages(rectifier, imagesLeft, imagesRight)
-    calib_rectified_result = cameraCalibrationFromImages((8, 6), (640, 480),
+
+    cv2.imshow("", rectifiedR[0])
+    cv2.imshow("a", rectifiedL[0])
+    cv2.waitKey(10000)
+
+    calib_rectified_result = cameraCalibrationFromImages((8, 6), stero_config.resolution,
                                                          rectifiedL, rectifiedR)
-    print(calib_result[1].cameraMatrix)
-    print(calib_result[1].newCameraMatrix)
-    print(calib_result[2].cameraMatrix)
-    print(calib_result[2].newCameraMatrix)
     print(calib_rectified_result[1].cameraMatrix)
     print(calib_rectified_result[1].newCameraMatrix)
     print(calib_rectified_result[2].cameraMatrix)

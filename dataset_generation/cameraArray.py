@@ -13,15 +13,21 @@ def get_now_str():
 
 class cameraThread:
 
-    def __init__(self, camidx, fps=30):
+    def __init__(self, camidx, fps=30, resolution=(640, 480)):
         self.cam_idx = camidx
         #  self.frames = Queue(fps)
         self.frame = None
         self.closed = False
-        self.cap = cv2.VideoCapture(camidx)
+        self.cap = cv2.VideoCapture(camidx, cv2.CAP_V4L2)
+
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
+        self.cap.set(cv2.CAP_PROP_FOURCC,
+                     cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
 
         def capture_function():
-            for i in range(30):
+            for _ in range(30):
                 self.cap.grab()
             while self.cap.isOpened() and not self.closed:
                 sleep(1/fps)
@@ -41,10 +47,11 @@ class cameraThread:
 
 
 class CamArray:
-    def __init__(self, camidxs, fps=60, save_frames_to=None, rectifier=lambda x, y: (x, y)):
+    def __init__(self, camidxs, fps=60, save_frames_to=None, rectifier=lambda x, y: (x, y), resolution=(640, 480)):
         assert (len(camidxs) == 2)
 
-        self.cams = list(map(lambda x: cameraThread(x, fps), camidxs))
+        self.cams = list(
+            map(lambda x: cameraThread(x, fps, resolution), camidxs))
         self.fps = fps
         self.save_frames_to = save_frames_to
         self.video_writers = None
@@ -52,9 +59,9 @@ class CamArray:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             now_str = get_now_str()
             self.video_writers = list(map(lambda cam_id: cv2.VideoWriter(
-                f"{save_frames_to}/{now_str}_{cam_id}.avi", fourcc, 30.0, (640, 480)), camidxs))
+                f"{save_frames_to}/{now_str}_{cam_id}.avi", fourcc, 30.0, resolution), camidxs))
             self.video_writers_rectified = list(map(lambda cam_id: cv2.VideoWriter(
-                f"{save_frames_to}/{now_str}_{cam_id}_rectified.avi", fourcc, 30.0, (640, 480)), camidxs))
+                f"{save_frames_to}/{now_str}_{cam_id}_rectified.avi", fourcc, 30.0, resolution), camidxs))
         self.rectifier = rectifier
 
     def start(self):
@@ -75,6 +82,7 @@ class CamArray:
         frames = list(map(lambda cam: cam.get_frame(), self.cams))
         # record the frames into a video
         if self.video_writers is not None:
+            print("writting frames")
             for (_, frame), writer in zip(frames, self.video_writers):
                 writer.write(frame)
 
@@ -82,6 +90,7 @@ class CamArray:
         frames = ((True, frame1), (True, frame2))
 
         if self.video_writers_rectified is not None:
+            print("writting rectified frames")
             for (_, frame), writer in zip(frames, self.video_writers_rectified):
                 writer.write(frame)
         return ((True, frame1), (True, frame2))

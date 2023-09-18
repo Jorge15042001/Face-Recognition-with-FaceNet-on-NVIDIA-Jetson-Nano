@@ -12,7 +12,7 @@ from datetime import datetime
 @dataclass
 class CameraConfig:
     idx: int
-    fpx: float()
+    fpx: float
     center: List[float]
 
 
@@ -29,6 +29,7 @@ class StereoConfig:
     save_images: bool
 
     save_path: str
+    resolution: tuple[int, int]
 
 
 def startCameraArray(left_camera: CameraConfig,
@@ -36,7 +37,8 @@ def startCameraArray(left_camera: CameraConfig,
                      streo_config: StereoConfig) -> CamArray:
     if streo_config.save_images:
         return CamArray((left_camera.idx, right_camera.idx),
-                        save_frames_to=streo_config.save_path)
+                        save_frames_to=streo_config.save_path,
+                        resolution=streo_config.resolution)
 
     return CamArray((left_camera.idx, right_camera.idx))
 
@@ -53,6 +55,8 @@ def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
     save_imgs = stero_config["save_images"]
 
     save_imgs_path = stero_config["save_path"]
+    resx, resy = stero_config["resolution"]
+    res = (resx, resy)
 
     left_camera = CameraConfig(
         stero_config["left_camera"]["idx"],
@@ -68,4 +72,4 @@ def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
 
     return StereoConfig(left_camera, right_camera, sep,
                         stereo_map_file, depth_to_pixel_size,
-                        show_images, save_imgs,  save_imgs_path)
+                        show_images, save_imgs,  save_imgs_path, res)

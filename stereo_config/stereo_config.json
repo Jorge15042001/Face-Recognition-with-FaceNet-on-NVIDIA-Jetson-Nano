@@ -1,25 +1,28 @@
 {
     "left_camera": {
         "idx": 1,
-        "fpx": 873.3146362304688,
+        "fpx": 862.4528407706596,
         "center": [
-            329.040620452588,
-            243.9685640022435
+            342.8784628471611,
+            245.17275956525611
         ]
     },
     "right_camera": {
         "idx": 3,
-        "fpx": 993.7913208007812,
+        "fpx": 848.0244321481684,
         "center": [
-            364.7153863123476,
-            212.79033915896252
+            305.1624088941415,
+            245.63830746035842
         ]
     },
-    "separation": 16,
+    "separation": 7.5,
     "stereo_map_file": "./stereo_config/stereoMap.xml",
     "depth_to_pixel_size": 0.001315666666666666,
     "show_images": true,
     "save_images": true,
-    "save_path": "./videos/" 
-
+    "save_path": "./videos/",
+    "resolution": [
+        640,
+        480
+    ]
 }

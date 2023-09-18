@@ -17,6 +17,8 @@ matplotlib = "*"
 resampy = "*"
 speechbrain = "*"
 opencv-contrib-python = "*"
+pyqt6 = "*"
+mediapipe = "*"
 
 [dev-packages]
 

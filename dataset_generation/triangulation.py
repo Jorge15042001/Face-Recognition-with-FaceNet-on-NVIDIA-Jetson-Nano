@@ -1,8 +1,7 @@
 import numpy as np
 
 
-def find_depth_from_disparities(right_points, left_points,
-                                baseline=16, f_pixel=829.4):
+def find_depth_from_disparities(right_points, left_points, baseline, f_pixel):
 
     x_right = np.array(right_points)
     x_left = np.array(left_points)
