@@ -18,7 +18,7 @@ class cameraThread:
         #  self.frames = Queue(fps)
         self.frame = None
         self.closed = False
-        self.cap = cv2.VideoCapture(camidx, cv2.CAP_V4L2)
+        self.cap = cv2.VideoCapture(camidx)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
@@ -55,6 +55,7 @@ class CamArray:
         self.fps = fps
         self.save_frames_to = save_frames_to
         self.video_writers = None
+        self.video_writers_rectified = None
         if save_frames_to is not None:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             now_str = get_now_str()
@@ -74,8 +75,10 @@ class CamArray:
         for cam in self.cams:
             cam.close()
 
-        for writer in self.video_writers + self.video_writers_rectified:
-            writer.release()
+        if self.video_writers is not None and\
+            self.video_writers_rectified is not None:
+            for writer in self.video_writers + self.video_writers_rectified:
+                writer.release()
 
     def get_frames(self):
         while any(map(lambda cam: not cam.get_frame()[0], self.cams)): continue
