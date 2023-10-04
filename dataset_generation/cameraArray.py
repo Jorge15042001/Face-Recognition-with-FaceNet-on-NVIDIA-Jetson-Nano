@@ -34,6 +34,8 @@ class cameraThread:
                 frame = self.cap.read()
                 #  self.frames.put(frame)
                 self.frame = frame
+                self.closed = not frame[0]
+
             self.cap.release()
         self.cap_thread = threading.Thread(
             target=capture_function, daemon=True)

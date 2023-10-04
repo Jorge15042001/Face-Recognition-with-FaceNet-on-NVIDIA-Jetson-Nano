@@ -14,3 +14,13 @@ def find_depth_from_disparities(right_points, left_points, baseline, f_pixel):
     zDepth = (baseline*f_pixel)/disparity  # Depth in [cm]
 
     return np.mean(zDepth)
+
+
+def find_depth(right_points, left_points, baseline, f_pixel):
+    disparity = np.abs(left_points-right_points)
+    disparity = disparity[:, 0]
+
+    # CALCULATE DEPTH z:
+    zDepth = (baseline*f_pixel)/disparity  # Depth in [cm]
+
+    return zDepth

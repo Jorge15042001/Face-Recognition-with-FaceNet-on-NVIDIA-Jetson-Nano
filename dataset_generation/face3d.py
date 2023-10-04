@@ -17,7 +17,8 @@ def face3d(face_left, face_right, baseline, f_px):
 
     x = face_left[:, 0]
     y = face_left[:, 1]
-    z = [find_depth_from_disparities([x1[0]], [x2[0]], baseline, f_px) for x1, x2 in zip(face_left, face_right)]
+    z = [find_depth_from_disparities(
+        [x1[0]], [x2[0]], baseline, f_px) for x1, x2 in zip(face_left, face_right)]
 
     #  for p_left, p_right in zip(face_left, face_right):
     #      depth = find_depth_from_disparities(
@@ -33,9 +34,9 @@ class LivePlot3d:
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.keep_loop = True
 
-    def plot(self, x, y, z):
+    def plot(self, x, y, z, marker="o"):
         def run():
-            self.ax.scatter(x, y, z)
+            self.ax.scatter(x, y, z, marker=marker)
             plt.draw()
             #  time.sleep(1)
         thread = threading.Thread(target=run)
@@ -44,6 +45,7 @@ class LivePlot3d:
         plt.pause(0.1)
         thread.join()
 
+    def clean(self):
         self.ax.cla()
 
 
@@ -90,6 +92,7 @@ class Face3dAnalizer:
             #  frame_left_gray = cv2.cvtColor(frame_left, cv2.COLOR_BGR2GRAY)
             #  frame_right_gray = cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY)
             #
+            plot3d.clean()
             plot3d.plot(x, y, z)
 
             if not succes_right or not succes_left:
