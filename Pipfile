@@ -6,20 +6,23 @@ name = "pypi"
 [packages]
 pysimplegui = "*"
 pillow = "*"
-tensorflow = "2.13.0"
+tensorflow = "*"
 cudatools= "*"
 unidecode = "*"
 pyaudio = "*"
 imutils = "*"
 librosa = "*"
 pandas = "*"
-keras = "*"
 matplotlib = "*"
 resampy = "*"
 speechbrain = "*"
 opencv-contrib-python = "*"
 pyqt6 = "*"
 mediapipe = "*"
+keras-applications = "*"
+mtcnn = "*"
+keras-vggface = {git = "https://github.com/rcmalli/keras-vggface.git"}
+keras = "==2.12"
 
 [dev-packages]
 

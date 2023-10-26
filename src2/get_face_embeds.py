@@ -6,10 +6,14 @@ import numpy as np
 from stereo_lib.utils import loadStereoCameraConfig, startCameraArray
 from stereo_lib.calibration import getStereoRectifier
 from face_mesh import FeaturesExtractor, FaceFeatures
+import traceback
+from keras_vggface.vggface import VGGFace
+from keras_vggface import utils
 from tensorflow.compat.v1 import disable_eager_execution, GPUOptions, Session, ConfigProto, get_default_graph, train
 #  from speechbrain.pretrained import SpeakerRecognition
 import copy
 import os
+import time
 
 verification_threshold = 0.75
 
@@ -44,7 +48,26 @@ def crop_face(img, face_points, width_multiplier=1.1, height_multiplier=1.3):
     return croped_face
 
 
-class FaceRecognition:
+class FaceRecognitionVGGFace:
+    def __init__(self):
+        gpu_options = GPUOptions(per_process_gpu_memory_fraction=0.333)
+        self.session = Session(config=ConfigProto(gpu_options=gpu_options))
+        self.vggface = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3), pooling='avg')
+
+    def img_to_embedding(self, face):
+        #  x = face/255.
+        x = face.astype('float32')
+        print(x.shape)
+
+        x = np.expand_dims(x, axis=0)
+        x = utils.preprocess_input(x, version=1)
+        preds = self.session.run(self.vggface.predict(x))
+        preds = utils.decode_predictions(preds)
+        print(preds.shape)
+        return preds
+
+
+class FaceRecognitionFaceNet:
     def __init__(self):
         gpu_options = GPUOptions(per_process_gpu_memory_fraction=0.333)
         self.session = Session(config=ConfigProto(gpu_options=gpu_options))
@@ -65,6 +88,7 @@ class FaceRecognition:
 
     # Image to embedding conversion
     def img_to_embedding(self, img, image_size):
+        start_time = time.time()
         # Creation of the image tensor
         image = np.zeros((1, image_size, image_size, 3))
         # Convert the image to rgb if it is in greyscale
@@ -83,6 +107,9 @@ class FaceRecognition:
         emb_array = np.zeros((1, self.embedding_size))
         emb_array[0, :] = self.session.run(
             self.embeddings, feed_dict=feed_dict)
+        elapsed_time = time.time() - start_time
+        fps = 1 / elapsed_time
+        print(f"fps: {fps}")
         return np.squeeze(emb_array)
 
     @staticmethod
@@ -107,7 +134,8 @@ class StereoVideoAnalizer:
         self.features_left = FeaturesExtractor()
         self.features_right = FeaturesExtractor()
 
-        self.face_recognizer = FaceRecognition()
+        self.face_recognizer_fn = FaceRecognitionFaceNet()
+        self.face_recognizer_vgg = FaceRecognitionVGGFace()
         self.keep_loop = True
         self.name = name
         self.thread = None
@@ -133,12 +161,14 @@ class StereoVideoAnalizer:
             face_left = crop_face(frame_left, left_kpts[2])
             face_right = crop_face(frame_right, right_kpts[2])
             try:
-                left_embeding = self.face_recognizer.img_to_embedding(
+                left_embeding = self.face_recognizer_fn.img_to_embedding(
                     cv2.resize(face_left, (160, 160)), 160)
-                right_embeding = self.face_recognizer.img_to_embedding(
+                right_embeding = self.face_recognizer_fn.img_to_embedding(
                     cv2.resize(face_right, (160, 160)), 160)
+                self.face_recognizer_vgg.img_to_embedding(
+                    cv2.resize(face_left, (224, 224)))
 
-                same_person = FaceRecognition.is_same(
+                same_person = FaceRecognitionFaceNet.is_same(
                     left_embeding, right_embeding)
                 if (same_person):
                     face_embedings.append(left_embeding)
@@ -146,7 +176,9 @@ class StereoVideoAnalizer:
                 terminate = self.showImages(face_left, face_right)
                 if terminate:
                     break
-            except:
+            except Exception as e:
+                #  print(e.with_traceback())
+                traceback.print_exc()
                 break
 
         self.cams.close()
@@ -157,7 +189,7 @@ class StereoVideoAnalizer:
 
         failed = 0
         for emb in face_embedings:
-            same = FaceRecognition.is_same(emb, face_embeding_final)
+            same = FaceRecognitionFaceNet.is_same(emb, face_embeding_final)
             if not same:
                 failed += 1
         print(failed/len(face_embedings))
@@ -181,6 +213,7 @@ class StereoVideoAnalizer:
             if cv2.waitKey(5) & 0xFF == 27:
                 return True
             return False
+
 
 if __name__ == "__main__":
     name = sys.argv[2]

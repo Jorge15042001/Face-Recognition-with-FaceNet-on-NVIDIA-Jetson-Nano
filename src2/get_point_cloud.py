@@ -30,7 +30,7 @@ class PointCloudExtractor:
                                      self.stereo_config.right_camera,
                                      self.stereo_config)
         rectifier = getStereoRectifier(self.stereo_config.stereo_map_file)
-        self.cams.rectifier = rectifier
+        #  self.cams.rectifier = rectifier
 
         self.features_left = FeaturesExtractor()
         self.features_right = FeaturesExtractor()
@@ -48,6 +48,9 @@ class PointCloudExtractor:
             frame_left, frame_right = self.cams.get_frames()
             succes_left, frame_left = frame_left
             succes_right, frame_right = frame_right
+            cv2.imshow("left", frame_left)
+            cv2.imshow("right", frame_right)
+            cv2.waitKey(0)
 
             if not succes_right or not succes_left:
                 print("Ignoring empty camera frame.")
@@ -66,8 +69,8 @@ class PointCloudExtractor:
             x, y = get_coordinaties_3d(left_kpts[2], px_size,
                                        left_kpts[1].nose)
             z = depth - depth[2]
-            #  self.plot3d_1.clean()
-            #  self.plot3d_1.plot(x, y, z, marker="o")
+            self.plot3d_1.clean()
+            self.plot3d_1.plot(x, y, z, marker="o")
             #  self.plot3d_1.plot(x, y, depth, marker="o")
 
             eye1 = np.array((x[33], y[33], z[33]))
