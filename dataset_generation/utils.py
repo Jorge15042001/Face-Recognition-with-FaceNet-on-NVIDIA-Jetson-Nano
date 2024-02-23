@@ -1,46 +1,23 @@
 
-from .cameraArray import CamArray
+from .cameraArray import CamArray, StereoConfig, CameraConfig
 from typing import List
 
 import json
 from dataclasses import dataclass
 
-from datetime import datetime
+
+def is_binocular_cam(stereoConfig: StereoConfig):
+    return stereoConfig.left_camera.idx == stereoConfig.right_camera.idx
 
 
+def startCameraArray(stereo_config: StereoConfig) -> CamArray:
+    if stereo_config.save_images:
+        return CamArray((stereo_config.left_camera,
+                         stereo_config.right_camera),
+                        save_frames_to=stereo_config.save_path)
 
-@dataclass
-class CameraConfig:
-    idx: int
-    fpx: float
-    center: List[float]
-
-
-@dataclass
-class StereoConfig:
-    left_camera: CameraConfig
-    right_camera: CameraConfig
-
-    cam_separation: float
-    stereo_map_file: str
-    depth_to_pixel_size: float
-    show_images: bool
-
-    save_images: bool
-
-    save_path: str
-    resolution: tuple[int, int]
-
-
-def startCameraArray(left_camera: CameraConfig,
-                     right_camera: CameraConfig,
-                     streo_config: StereoConfig) -> CamArray:
-    if streo_config.save_images:
-        return CamArray((left_camera.idx, right_camera.idx),
-                        save_frames_to=streo_config.save_path,
-                        resolution=streo_config.resolution)
-
-    return CamArray((left_camera.idx, right_camera.idx))
+    return CamArray((stereo_config.left_camera,
+                     stereo_config.right_camera))
 
 
 def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
@@ -55,21 +32,27 @@ def loadStereoCameraConfig(json_fname: str) -> StereoConfig:
     save_imgs = stero_config["save_images"]
 
     save_imgs_path = stero_config["save_path"]
-    resx, resy = stero_config["resolution"]
-    res = (resx, resy)
 
     left_camera = CameraConfig(
         stero_config["left_camera"]["idx"],
         stero_config["left_camera"]["fpx"],
-        stero_config["left_camera"]["center"]
+        (stero_config["left_camera"]["center"][0],
+         stero_config["left_camera"]["center"][1]),
+        (stero_config["left_camera"]["resolution"][0],
+         stero_config["left_camera"]["resolution"][1]),
+        stero_config["left_camera"]["fps"]
     )
 
     right_camera = CameraConfig(
         stero_config["right_camera"]["idx"],
         stero_config["right_camera"]["fpx"],
-        stero_config["right_camera"]["center"]
+        (stero_config["right_camera"]["center"][0],
+         stero_config["right_camera"]["center"][1]),
+        (stero_config["right_camera"]["resolution"][0],
+         stero_config["right_camera"]["resolution"][1]),
+        stero_config["right_camera"]["fps"]
     )
 
     return StereoConfig(left_camera, right_camera, sep,
                         stereo_map_file, depth_to_pixel_size,
-                        show_images, save_imgs,  save_imgs_path, res)
+                        show_images, save_imgs,  save_imgs_path)

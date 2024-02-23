@@ -1,7 +1,14 @@
 import cv2
+# TODO: change file name
 
 
 def getStereoRectifier(calib_file):
+    """Build rectifier from stereo map file
+    Parameters:
+        calib_file (str): file name of the stereo map file generated with calibration procedure
+    Returns:
+        (np.ndarray, np.ndarray)->(np.ndarray,np.ndarray) rectify function takes 2 unrectified images and returns those images calibrated
+    """
 
     # Camera parameters to undistort and rectify images
     cv_file = cv2.FileStorage()

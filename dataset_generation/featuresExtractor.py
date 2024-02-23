@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from .triangulation import find_depth_from_disparities
 import mediapipe as mp
 from dataclasses import dataclass
 
@@ -12,12 +11,13 @@ mp_face_mesh = mp.solutions.face_mesh
 
 @dataclass
 class FaceFeatures:
-    eye1: np.array
-    eye2: np.array
-    mouth: np.array
-    nose: np.array
+    eye1: np.ndarray
+    eye2: np.ndarray
+    mouth: np.ndarray
+    nose: np.ndarray
 
     def normalize(self, width, height):
+        # TODO: never used maybe remove
         scale = np.array([width, height])
         normalized = FaceFeatures(self.eye1/scale,
                                   self.eye2/scale,
@@ -30,6 +30,18 @@ class FaceFeatures:
 
 
 class FeaturesExtractor:
+
+    """MediaPipe FaceMesh wrapper
+
+    Args:
+        save_pred_to (): unused delete?
+
+    Attributes:
+        save_pred_to (): unsed, delete?
+        face_mesh (mp_face_mesh.FaceMesh): MediaPipe FaceMesh detector instance
+
+    """
+
     def __init__(self, save_pred_to=None):
         self.save_pred_to = save_pred_to
         self.face_mesh = mp_face_mesh.FaceMesh(
@@ -40,6 +52,21 @@ class FeaturesExtractor:
         )
 
     def extract_keypts(self, frame):
+        """Run inferannce and get data
+
+        Parameters:
+            img (np.ndarray): image to run the infereance, since tracking is enable a continues stream of frames is expected
+
+        Returns:
+            bool: sucess
+            FaceFeatures: extracted face features
+            np.ndarray: numpy array containing all landmarks in px units
+            np.ndarray: numpy array containing all landmarks in relative units
+            FaceFeatures: extracted face features in relative units
+
+
+
+        """
         frame_height, frame_width, _ = frame.shape
 
         frame.flags.writeable = False  # TODO: does this improve performance?

@@ -4,7 +4,6 @@ from .calibration import getStereoRectifier
 import threading
 from .utils import startCameraArray, loadStereoCameraConfig, StereoConfig
 from .featuresExtractor import FaceFeatures, FeaturesExtractor
-import pyaudio
 import wave
 import time
 from .triangulation import find_depth_from_disparities
@@ -12,14 +11,14 @@ import matplotlib.pyplot as plt
 import sys
 
 
-def face3d(face_left, face_right, baseline, f_px):
+def face3d(face_left, face_right, baseline, f_px, center_left):
     assert len(face_left) == len(face_right)
 
-    x = face_left[:, 0]
-    y = face_left[:, 1]
     z = [find_depth_from_disparities(
         [x1[0]], [x2[0]], baseline, f_px) for x1, x2 in zip(face_left, face_right)]
 
+    x = (face_left[:, 0] - center_left[0])*z/f_px
+    y = (face_left[:, 1] - center_left[1])*z/f_px
     #  for p_left, p_right in zip(face_left, face_right):
     #      depth = find_depth_from_disparities(
     #          [p_left[0]], [p_right[0]], baseline, f_px)
@@ -35,15 +34,15 @@ class LivePlot3d:
         self.keep_loop = True
 
     def plot(self, x, y, z, marker="o"):
-        def run():
-            self.ax.scatter(x, y, z, marker=marker)
-            plt.draw()
-            #  time.sleep(1)
-        thread = threading.Thread(target=run)
-        thread.start()
-
+        #  def run():
+        self.ax.scatter(x, y, z, marker=marker)
+        #  time.sleep(1)
+        plt.draw()
         plt.pause(0.1)
-        thread.join()
+        #  thread = threading.Thread(target=run)
+        #  thread.start()
+
+        #  thread.join()
 
     def clean(self):
         self.ax.cla()
@@ -55,9 +54,7 @@ class Face3dAnalizer:
 
         self.f_length = min(self.stereo_config.left_camera.fpx,
                             self.stereo_config.right_camera.fpx)
-        self.cams = startCameraArray(self.stereo_config.left_camera,
-                                     self.stereo_config.right_camera,
-                                     self.stereo_config)
+        self.cams = startCameraArray(self.stereo_config)
         rectifier = getStereoRectifier(self.stereo_config.stereo_map_file)
 
         self.cams.rectifier = rectifier
@@ -81,7 +78,7 @@ class Face3dAnalizer:
             if not features_left[0] or not features_right[0]:
                 continue
             x, y, z = face3d(
-                features_left[2], features_right[2], self.stereo_config.cam_separation, self.f_length)
+                features_left[2], features_right[2], self.stereo_config.cam_separation, self.f_length, self.stereo_config.left_camera.center)
 
             #  magnification = 1
             #  frame_left = cv2.resize(frame_left, (np.array(
@@ -99,7 +96,8 @@ class Face3dAnalizer:
                 print("Ignoring empty camera frame.")
                 continue
 
-            terminate = self.showImages(frame_left, frame_right, frame_left)
+            terminate = self.showImages(
+                frame_left, frame_right, frame_left,  0.25)
             if terminate:
                 break
         self.cams.close()
@@ -117,8 +115,6 @@ class Face3dAnalizer:
                 frame_right, (np.array(frame_right.shape[:2][::-1])*magnification).astype(int)))
             cv2.imshow("frame left", cv2.resize(
                 frame_left, (np.array(frame_right.shape[:2][::-1])*magnification).astype(int)))
-            cv2.imshow("depth_map", cv2.resize(
-                disparity, (np.array(disparity.shape[:2][::-1])*magnification).astype(int)))
             if cv2.waitKey(5) & 0xFF == 27:
                 return True
             return False
